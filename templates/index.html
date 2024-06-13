@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Talking LLM Interface</title>
+</head>
+<body>
+    <h1>Talking LLM Interface</h1>
+    <form action="/generate_graph" method="post">
+        <label for="text">Digite seu texto:</label>
+        <input type="text" id="text" name="text" required>
+        <button type="submit">Enviar</button>
+    </form>
+    {% if response %}
+        <p>Resposta: {{ response }}</p>
+    {% endif %}
+    {% if image %}
+        <img src="{{ image }}" alt="Gráfico">
+    {% endif %}
+</body>
+</html>

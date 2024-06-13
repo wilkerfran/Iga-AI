@@ -1,0 +1,11 @@
+python3 -m venv .venv
+
+source .venv/bin/activate
+
+run : python talking_llm.py
+
+pyobjc-core==10.2
+pyobjc-framework-ApplicationServices==10.2
+pyobjc-framework-Cocoa==10.2
+pyobjc-framework-CoreText==10.2
+pyobjc-framework-Quartz==10.2

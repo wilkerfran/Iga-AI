@@ -15,6 +15,7 @@ from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe
 from langchain.agents.agent_types import AgentType
 from langchain.agents import AgentExecutor
 import statsmodels.api as sm
+import matplotlib.pyplot as plt
 
 load_dotenv(find_dotenv())
 client = openai.Client()
@@ -88,21 +89,41 @@ class TalkingLLM():
         result = self.whisper.transcribe("test.wav", fp16=False)
         print("Usuário:", result["text"])
 
+        response_text = self.handle_input(result["text"])
+        self.llm_queue.put(response_text)
+
+    def handle_input(self, user_input):
+        if "gerar gráfico" in user_input.lower():
+            return self.generate_graph(user_input)
+        else:
+            try:
+                response = self.agent_executor.invoke({"input": user_input})
+                if 'execute' in response['output']:
+                    exec_globals = {}
+                    exec(response['output'], {}, exec_globals)
+                    return exec_globals['results_summary']
+                else:
+                    return response["output"]
+            except ValueError as e:
+                return "Erro de parsing: " + str(e)
+            except json.JSONDecodeError as e:
+                return "Erro ao decodificar JSON: " + str(e)
+
+    def generate_graph(self, user_input):
         try:
-            response = self.agent_executor.invoke({"input": result["text"]})
-            print("AI:", response)
-            if 'execute' in response['output']:
-                exec_globals = {}
-                exec(response['output'], {}, exec_globals)
-                self.llm_queue.put(exec_globals['results_summary'])
+            if "price" in user_input.lower():
+                plt.figure(figsize=(10, 6))
+                plt.plot(self.df['Price'])
+                plt.xlabel('Index')
+                plt.ylabel('Price')
+                plt.title('Price Variation')
+                plt.savefig('static/price_variation.png')
+                plt.close()
+                return "Gráfico salvo como 'static/price_variation.png'."
             else:
-                self.llm_queue.put(response["output"])
-        except ValueError as e:
-            print("Erro de parsing:", e)
-            self.llm_queue.put("Desculpe, houve um erro ao processar sua solicitação.")
-        except json.JSONDecodeError as e:
-            print("Erro ao decodificar JSON:", e)
-            self.llm_queue.put("Desculpe, houve um erro ao processar sua solicitação.")
+                return "Desculpe, não consegui identificar a variável para o gráfico."
+        except Exception as e:
+            return f"Erro ao gerar o gráfico: {e}"
 
     def convert_and_play(self):
         while True:
@@ -129,21 +150,8 @@ class TalkingLLM():
 
     def input_text(self):
         user_input = input("Digite seu texto: ")
-        try:
-            response = self.agent_executor.invoke({"input": user_input})
-            print("AI:", response)
-            if 'execute' in response['output']:
-                exec_globals = {}
-                exec(response['output'], {}, exec_globals)
-                self.llm_queue.put(exec_globals['results_summary'])
-            else:
-                self.llm_queue.put(response["output"])
-        except ValueError as e:
-            print("Erro de parsing:", e)
-            self.llm_queue.put("Desculpe, houve um erro ao processar sua solicitação.")
-        except json.JSONDecodeError as e:
-            print("Erro ao decodificar JSON:", e)
-            self.llm_queue.put("Desculpe, houve um erro ao processar sua solicitação.")
+        response_text = self.handle_input(user_input)
+        self.llm_queue.put(response_text)
 
     def audio_callback(self, indata, frame_count, time_info, status):
         if self.is_recording:
