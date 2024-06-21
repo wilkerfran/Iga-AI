@@ -16,11 +16,12 @@ from langchain.agents.agent_types import AgentType
 from langchain.agents import AgentExecutor
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
+import json
 
 load_dotenv(find_dotenv())
 client = openai.Client()
 
-class TalkingLLM():
+class TalkingLLM:
     def __init__(self, model="gpt-3.5-turbo-0613", whisper_size="small"):
         self.is_recording = False
         self.audio_data = []
@@ -35,8 +36,7 @@ class TalkingLLM():
         self.llm_queue = Queue()
 
         self.csv_files = self.get_csv_files()
-        self.df = self.select_dataframe()
-        self.create_agent()
+        self.df = None  # Inicialmente nenhum DataFrame selecionado
 
     def get_csv_files(self):
         datasets_path = "datasets"
@@ -51,9 +51,13 @@ class TalkingLLM():
         selected_file = self.csv_files[file_index]
         print(f"Arquivo selecionado: {selected_file}")
         
-        return pd.read_csv(os.path.join("datasets", selected_file))
+        self.df = pd.read_csv(os.path.join("datasets", selected_file))
+        self.create_agent()
 
     def create_agent(self):
+        if self.df is None:
+            raise ValueError("DataFrame não está definido.")
+
         agent_prompt_prefix = """
             Você se chama Beemo, e está trabalhando com dataframe pandas no Python. O nome do Dataframe é `df`.
             Você sabe como realizar análise de regressão utilizando `statsmodels` e pode executar código Python diretamente para realizar análises de dados.
@@ -67,7 +71,6 @@ class TalkingLLM():
             agent_type=AgentType.OPENAI_FUNCTIONS,
         )
 
-        # Adicionando a configuração para lidar com erros de parsing
         self.agent_executor = AgentExecutor(
             agent=self.agent.agent,
             tools=self.agent.tools,
@@ -108,6 +111,8 @@ class TalkingLLM():
                 return "Erro de parsing: " + str(e)
             except json.JSONDecodeError as e:
                 return "Erro ao decodificar JSON: " + str(e)
+            except openai.error.APIConnectionError as e:
+                return "Erro de conexão com a API: " + str(e)
 
     def generate_graph(self, user_input):
         try:
@@ -185,8 +190,7 @@ class TalkingLLM():
                 elif user_choice.lower() == 't':
                     self.input_text()
                 elif user_choice.lower() == 'd':
-                    self.df = self.select_dataframe()
-                    self.create_agent()
+                    self.select_dataframe()
                 elif user_choice.lower() == 'v':
                     self.voice_enabled = not self.voice_enabled
                     status = "ativada" if self.voice_enabled else "desativada"

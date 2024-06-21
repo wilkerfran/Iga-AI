@@ -2,20 +2,91 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Talking LLM Interface</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <title>Talking LLM</title>
 </head>
-<body>
-    <h1>Talking LLM Interface</h1>
-    <form action="/generate_graph" method="post">
-        <label for="text">Digite seu texto:</label>
-        <input type="text" id="text" name="text" required>
-        <button type="submit">Enviar</button>
-    </form>
-    {% if response %}
-        <p>Resposta: {{ response }}</p>
-    {% endif %}
-    {% if image %}
-        <img src="{{ image }}" alt="Gráfico">
-    {% endif %}
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Talking LLM</h1>
+                <div class="row">
+                    <div class="col-md-4">
+                        <form method="POST" action="/set_dataframe" class="mb-4">
+                            <div class="form-group">
+                                <label for="file_index">Selecione o arquivo CSV:</label>
+                                <select name="file_index" id="file_index" class="form-control">
+                                    {% for index, file in csv_files %}
+                                        <option value="{{ index }}" {% if index == selected_file_index %} selected {% endif %}>{{ file }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">Carregar Base de Dados</button>
+                        </form>
+                        
+                        <h2 class="h5">Conversa Atual</h2>
+                        <ul class="list-group">
+                            {% for message in current_conversation %}
+                                <li class="list-group-item"><strong>{{ message.user }}</strong>: {{ message.agent }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-md-8">
+                        <h2 class="h5">Todas as Conversas</h2>
+                        <ul class="list-group mb-4">
+                            {% for conversation in conversations %}
+                                <li class="list-group-item">
+                                    <ul>
+                                        {% for message in conversation %}
+                                            <li><strong>{{ message.user }}</strong>: {{ message.agent }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <form method="POST" action="/generate_response" class="mb-4">
+                            <div class="form-group">
+                                <label for="text">Digite sua mensagem:</label>
+                                <div class="input-group">
+                                    <input type="text" name="text" id="text" required class="form-control">
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-primary">Enviar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <div id="chart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            $.getJSON('/chart-data', function(data) {
+                var trace = {
+                    x: data.labels,
+                    y: data.values,
+                    type: 'scatter'
+                };
+                var layout = {
+                    title: 'Dados do Gráfico',
+                    xaxis: {
+                        title: 'Labels'
+                    },
+                    yaxis: {
+                        title: 'Values'
+                    }
+                };
+                Plotly.newPlot('chart', [trace], layout);
+            });
+        });
+    </script>
 </body>
 </html>
