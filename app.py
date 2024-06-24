@@ -1,23 +1,17 @@
-from flask import Flask, request, jsonify
-import pandas as pd
 import os
-from dotenv import load_dotenv, find_dotenv
-import openai
-import numpy as np
-import whisper
-import statsmodels.api as sm
+import json
 import matplotlib.pyplot as plt
+import pandas as pd
+from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 from langchain_openai import ChatOpenAI
 from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
-from langchain.agents.agent_types import AgentType
-from langchain.agents import AgentExecutor
-from queue import Queue
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from langchain.agents import AgentExecutor, AgentType
+from dotenv import load_dotenv, find_dotenv
+import openai
 
 # Load environment variables
 load_dotenv(find_dotenv())
-client = openai.Client()
 
 app = Flask(__name__)
 CORS(app)
@@ -26,21 +20,20 @@ class TalkingLLM:
     def __init__(self, model="gpt-3.5-turbo-0613", whisper_size="small"):
         self.selected_dataframe = None
         self.voice_enabled = True
-
-        self.whisper = whisper.load_model(whisper_size)
         self.llm = ChatOpenAI(model=model)
-        self.llm_queue = Queue()
-
         self.csv_files = self.get_csv_files()
         self.df = None  # Inicialmente nenhum DataFrame selecionado
+        self.agent_executor = None
 
     def get_csv_files(self):
         datasets_path = "datasets"
         return [f for f in os.listdir(datasets_path) if f.endswith('.csv')]
 
     def select_dataframe(self, file_index):
+        file_index = int(file_index)  # Converte o índice para inteiro
         selected_file = self.csv_files[file_index]
         self.df = pd.read_csv(os.path.join("datasets", selected_file))
+        self.columns = self.df.columns.tolist()  # Armazena as colunas do dataset
         self.create_agent()
 
     def create_agent(self):
@@ -66,37 +59,60 @@ class TalkingLLM:
         )
 
     def handle_input(self, user_input):
-        if "gerar gráfico" in user_input.lower():
-            return self.generate_graph(user_input)
-        else:
-            try:
+        try:
+            if "scatter plot" in user_input.lower():
+                #df = pd.read_csv("def_rent2.csv")  # Carregar o dataset selecionado
+                llm.select_dataframe(0)
+                print(self.df['Size'].values)
+                plt.figure(figsize=(10,10))
+                plt.scatter(self.df['Size'].values, self.df['Price'].values)
+                plt.xlabel('Size')
+                plt.ylabel('Price')
+                plt.title('Scatter plot: Price vs Size')
+                
+                # Salvar a imagem no diretório output
+                image_path = 'output/scatter_plot.png'
+                #plt.savefig(image_path)
+                
+                plt.savefig("scatter_plot.png")
+                plt.show()
+                plt.close()
+
+                return image_path
+            else:
                 response = self.agent_executor.invoke({"input": user_input})
-                if 'execute' in response['output']:
-                    exec_globals = {}
-                    exec(response['output'], {}, exec_globals)
-                    return exec_globals['results_summary']
-                else:
-                    return response["output"]
-            except ValueError as e:
-                return "Erro de parsing: " + str(e)
-            except json.JSONDecodeError as e:
-                return "Erro ao decodificar JSON: " + str(e)
+                return response['output']
+        except Exception as e:
+            return str(e)
 
     def generate_graph(self, user_input):
         try:
-            if "price" in user_input.lower():
-                plt.figure(figsize=(10, 6))
-                plt.plot(self.df['Price'])
-                plt.xlabel('Index')
+            plt.clf()
+            if "price" in user_input.lower() and "size" in user_input.lower():
+                plt.scatter(self.df['Size'], self.df['Price'])
+                plt.xlabel('Size')
                 plt.ylabel('Price')
-                plt.title('Price Variation')
-                plt.savefig('static/price_variation.png')
-                plt.close()
-                return "Gráfico salvo como 'static/price_variation.png'."
+                plt.title('Scatter plot: Price vs Size')
+
+                img_path = os.path.join("static", "scatter_plot.png")
+                plt.savefig(img_path)
+                result = {"img_url": f"/{img_path}"}
             else:
-                return "Desculpe, não consegui identificar a variável para o gráfico."
+                result = {"error": "Desculpe, não consegui identificar as variáveis para o gráfico."}
+
+            self.save_output_to_file(user_input, json.dumps(result))
+            return result
         except Exception as e:
-            return f"Erro ao gerar o gráfico: {e}"
+            error_message = {"error": f"Erro ao gerar o gráfico: {e}"}
+            self.save_output_to_file(user_input, json.dumps(error_message))
+            return error_message
+
+    def save_output_to_file(self, user_input, output):
+        if not os.path.exists("output"):
+            os.makedirs("output")
+        filename = f"output/{len(os.listdir('output')) + 1}_output.txt"
+        with open(filename, "w") as file:
+            file.write(f"Input: {user_input}\n\nOutput: {output}")
 
 llm = TalkingLLM()
 
@@ -118,6 +134,10 @@ def query():
     user_input = data['input']
     response = llm.handle_input(user_input)
     return jsonify({"response": response})
+
+@app.route('/static/<path:filename>', methods=['GET'])
+def get_static_file(filename):
+    return send_file(os.path.join('static', filename))
 
 if __name__ == '__main__':
     app.run(debug=True)

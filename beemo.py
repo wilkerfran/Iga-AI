@@ -52,6 +52,7 @@ class TalkingLLM:
         print(f"Arquivo selecionado: {selected_file}")
         
         self.df = pd.read_csv(os.path.join("datasets", selected_file))
+        self.columns = self.df.columns.tolist()  # Armazena as colunas do dataset
         self.create_agent()
 
     def create_agent(self):
@@ -62,7 +63,6 @@ class TalkingLLM:
             Você se chama Beemo, e está trabalhando com dataframe pandas no Python. O nome do Dataframe é `df`.
             Você sabe como realizar análise de regressão utilizando `statsmodels` e pode executar código Python diretamente para realizar análises de dados.
         """
-
         self.agent = create_pandas_dataframe_agent(
             self.llm,
             self.df,
@@ -70,7 +70,6 @@ class TalkingLLM:
             verbose=True,
             agent_type=AgentType.OPENAI_FUNCTIONS,
         )
-
         self.agent_executor = AgentExecutor(
             agent=self.agent.agent,
             tools=self.agent.tools,
@@ -117,18 +116,23 @@ class TalkingLLM:
     def generate_graph(self, user_input):
         try:
             if "price" in user_input.lower():
-                plt.figure(figsize=(10, 6))
-                plt.plot(self.df['Price'])
-                plt.xlabel('Index')
-                plt.ylabel('Price')
-                plt.title('Price Variation')
-                plt.savefig('static/price_variation.png')
-                plt.close()
-                return "Gráfico salvo como 'static/price_variation.png'."
+                data = {
+                    "labels": self.df.index.tolist(),
+                    "datasets": [
+                        {
+                            "label": "Price",
+                            "data": self.df['Price'].tolist(),
+                            "backgroundColor": 'rgba(75, 192, 192, 0.6)',
+                            "borderColor": 'rgba(75, 192, 192, 1)',
+                            "borderWidth": 1
+                        }
+                    ]
+                }
+                return json.dumps(data)
             else:
-                return "Desculpe, não consegui identificar a variável para o gráfico."
+                return json.dumps({"error": "Desculpe, não consegui identificar a variável para o gráfico."})
         except Exception as e:
-            return f"Erro ao gerar o gráfico: {e}"
+            return json.dumps({"error": f"Erro ao gerar o gráfico: {e}"})
 
     def convert_and_play(self):
         while True:
