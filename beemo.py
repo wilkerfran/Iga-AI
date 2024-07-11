@@ -36,7 +36,7 @@ class TalkingLLM:
         self.llm_queue = Queue()
 
         self.csv_files = self.get_csv_files()
-        self.df = None  # Inicialmente nenhum DataFrame selecionado
+        self.df = None
 
     def get_csv_files(self):
         datasets_path = "datasets"
@@ -52,7 +52,7 @@ class TalkingLLM:
         print(f"Arquivo selecionado: {selected_file}")
         
         self.df = pd.read_csv(os.path.join("datasets", selected_file))
-        self.columns = self.df.columns.tolist()  # Armazena as colunas do dataset
+        self.columns = self.df.columns.tolist()
         self.create_agent()
 
     def create_agent(self):

@@ -1,0 +1,3 @@
+Input: gere um gráfico de dispersão (scatter plot): para plotar o preço em relação a variavel tamanho
+
+Output: Agent stopped due to iteration limit or time limit.

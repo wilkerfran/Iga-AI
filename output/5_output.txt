@@ -1,0 +1,3 @@
+Input: gere um gráfico de barra com as variaveis price e rooms
+
+Output: {"img_url": "/static/chart.png"}

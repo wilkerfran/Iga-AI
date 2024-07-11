@@ -1,0 +1,5 @@
+Input: gere um gráfico de dispersão (scatter plot): para plotar o preço em relação a variavel tamanho
+
+Output: Aqui está o gráfico de dispersão (scatter plot) do preço em relação à variável tamanho:
+
+![Scatter plot: Price vs Size](scatter_plot.png)

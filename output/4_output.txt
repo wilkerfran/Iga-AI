@@ -1,0 +1,15 @@
+Input: gere um gráfico de dispersão (scatter plot): para plotar o preço em relação a variavel tamanho
+
+Output: Aqui está o gráfico de dispersão (scatter plot) do preço em relação à variável tamanho:
+
+``` python
+import matplotlib.pyplot as plt
+
+plt.scatter(df['Size'], df['Price'])
+plt.xlabel('Size')
+plt.ylabel('Price')
+plt.title('Scatter plot: Price vs Size')
+plt.show()
+```
+
+![scatter_plot](scatter_plot.png)
