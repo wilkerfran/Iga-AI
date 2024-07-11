@@ -1,4 +1,4 @@
 *.csv
-datasets/
+
 .env
 .env
