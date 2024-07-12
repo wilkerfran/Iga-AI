@@ -1,3 +1,6 @@
+Flask
+matplotlib
+flask_cors
 aiohttp==3.9.5
 aiosignal==1.3.1
 annotated-types==0.6.0
@@ -9,7 +12,6 @@ charset-normalizer==3.3.2
 dataclasses-json==0.6.4
 distro==1.9.0
 filelock==3.13.4
-Flask
 frozenlist==1.4.1
 fsspec==2024.3.1
 h11==0.14.0
@@ -31,7 +33,6 @@ MarkupSafe==2.1.5
 marshmallow==3.21.1
 more-itertools==10.2.0
 mpmath==1.3.0
-matplotlib
 multidict==6.0.5
 mypy-extensions==1.0.0
 networkx==3.3
