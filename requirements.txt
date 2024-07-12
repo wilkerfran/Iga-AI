@@ -9,6 +9,7 @@ charset-normalizer==3.3.2
 dataclasses-json==0.6.4
 distro==1.9.0
 filelock==3.13.4
+Flask
 frozenlist==1.4.1
 fsspec==2024.3.1
 h11==0.14.0
