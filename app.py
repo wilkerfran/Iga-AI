@@ -30,7 +30,7 @@ class TalkingLLM:
     def select_dataframe(self, file_index):
         file_index = int(file_index)
         selected_file = self.csv_files[file_index]
-        print(f"Selecionando o dataset: {selected_file}")  # Log para verificar o arquivo selecionado
+        print(f"Selecionando o dataset: {selected_file}")
         self.df = pd.read_csv(os.path.join("datasets", selected_file))
         self.columns = self.df.columns.tolist()
         self.create_agent()
@@ -70,7 +70,6 @@ class TalkingLLM:
     def generate_graph(self, user_input):
         try:
             plt.clf()
-            # Identificar o tipo de gráfico solicitado
             if "barras" in user_input.lower() or "barra" in user_input.lower():
                 graph_type = "bar"
             elif "linha" in user_input.lower():
@@ -80,7 +79,6 @@ class TalkingLLM:
             else:
                 return {"error": "Tipo de gráfico não suportado."}
 
-            # Extrair as colunas mencionadas pelo usuário
             columns = self.extract_columns(user_input)
             if len(columns) != 2:
                 return {"error": "Precisamos de exatamente duas colunas para gerar um gráfico."}
@@ -99,10 +97,9 @@ class TalkingLLM:
             img_path = os.path.join("static", "chart.png")
             plt.savefig(img_path)
             
-            # Gerar texto explicativo com base no gráfico gerado
             text = f"Aqui está um gráfico {graph_type} mostrando a relação entre {columns[0]} e {columns[1]}."
 
-            result = {"img_url": f"/static/chart.png", "text": text}
+            result = {"img_url": "/static/chart.png", "text": text}
             self.save_output_to_file(user_input, json.dumps(result))
             return result
         except Exception as e:
