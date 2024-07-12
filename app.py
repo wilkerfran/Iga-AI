@@ -8,7 +8,6 @@ from langchain_openai import ChatOpenAI
 from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
 from langchain.agents import AgentExecutor, AgentType
 from dotenv import load_dotenv, find_dotenv
-import openai
 
 # Load environment variables
 load_dotenv(find_dotenv())
@@ -103,7 +102,7 @@ class TalkingLLM:
             # Gerar texto explicativo com base no gráfico gerado
             text = f"Aqui está um gráfico {graph_type} mostrando a relação entre {columns[0]} e {columns[1]}."
 
-            result = {"img_url": f"/{img_path}", "text": text}
+            result = {"img_url": f"/static/chart.png", "text": text}
             self.save_output_to_file(user_input, json.dumps(result))
             return result
         except Exception as e:
@@ -151,4 +150,5 @@ def get_static_file(filename):
     return send_file(os.path.join('static', filename))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
